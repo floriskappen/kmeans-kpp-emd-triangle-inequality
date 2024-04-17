@@ -9,6 +9,9 @@ use std::error::Error;
 static EXPORT_PATH: &str = "./data_out";
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Centroids(Vec<Vec<u32>>);
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Labels(Vec<usize>);
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -20,14 +23,20 @@ impl Histograms {
     }
 }
 
-pub fn save_data(labels: &Vec<usize>, round: usize) -> Result<(), Box<dyn std::error::Error>> {
-    let filepath = format!("{}/labels_round_{}.bin", EXPORT_PATH, round);
+pub fn save_data(labels: &Vec<usize>, centroids: &Vec<Vec<u32>>, round: usize) -> Result<(), Box<dyn std::error::Error>> {
+    let filepath_labels = format!("{}/labels_round_{}.bin", EXPORT_PATH, round);
+    let filepath_centroids = format!("{}/centroids_round_{}.bin", EXPORT_PATH, round);
+    let output_file_labels = File::create(filepath_labels)?;
+    let output_file_centroids = File::create(filepath_centroids)?;
 
-    let output_file = File::create(filepath)?;
 
-    let mut writer = BufWriter::new(output_file);
+    let mut writer_labels = BufWriter::new(output_file_labels);
     let labels = Labels(labels.clone());
-    labels.serialize(&mut Serializer::new(&mut writer))?;
+    labels.serialize(&mut Serializer::new(&mut writer_labels))?;
+
+    let mut writer_centroids = BufWriter::new(output_file_centroids);
+    let centroids = Centroids(centroids.clone());
+    centroids.serialize(&mut Serializer::new(&mut writer_centroids))?;
 
     Ok(())
 }

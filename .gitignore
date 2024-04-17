@@ -19,3 +19,4 @@ Cargo.lock
 /target
 /data_in/*.bin
 /data_out/*.bin
+.DS_Store

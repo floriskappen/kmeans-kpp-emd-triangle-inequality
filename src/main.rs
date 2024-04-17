@@ -38,6 +38,7 @@ fn main() {
         1000,
         0.01
     ).expect("error during kmeans");
-    save_data(&labels, round).expect("Error saving labels... :(");
+    drop(histogram_loader);
+    save_data(&labels, &centroids, round).expect("Error saving labels... :(");
     // println!("In case labels weren't saved correctly: {:?}", labels);
 }
