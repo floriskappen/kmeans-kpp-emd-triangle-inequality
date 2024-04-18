@@ -23,9 +23,9 @@ impl Histograms {
     }
 }
 
-pub fn save_data(labels: &Vec<usize>, centroids: &Vec<Vec<u32>>, round: usize) -> Result<(), Box<dyn std::error::Error>> {
-    let filepath_labels = format!("{}/labels_round_{}.bin", EXPORT_PATH, round);
-    let filepath_centroids = format!("{}/centroids_round_{}.bin", EXPORT_PATH, round);
+pub fn save_data(labels: &Vec<usize>, centroids: &Vec<Vec<u32>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
+    let filepath_labels = format!("{}/labels_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
+    let filepath_centroids = format!("{}/centroids_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
     let output_file_labels = File::create(filepath_labels)?;
     let output_file_centroids = File::create(filepath_centroids)?;
 
