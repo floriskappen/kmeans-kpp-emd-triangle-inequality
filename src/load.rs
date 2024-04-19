@@ -1,42 +1,35 @@
 
-use rmp_serde::{Deserializer, Serializer};
-use serde::{Deserialize, Serialize};
+use prost::Message;
 use std::fs::{self, File};
-use std::io::{BufReader, BufWriter};
+use std::io::{BufReader, BufWriter, Read, Write};
 use itertools::Itertools;
 use std::error::Error;
 
+use crate::proto::{ClusteredDataCentroids, ClusteredDataLabels, HandStrengthHistograms};
+
 static EXPORT_PATH: &str = "./data_out";
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Centroids(Vec<Vec<u32>>);
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Labels(Vec<usize>);
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Histograms(Vec<Vec<u8>>);
-
-impl Histograms {
-    pub fn data(&self) -> &[Vec<u8>] {
-        return self.0.as_slice();
-    }
-}
-
-pub fn save_data(labels: &Vec<usize>, centroids: &Vec<Vec<u32>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<u32>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
     let filepath_labels = format!("{}/labels_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
+    let labels = ClusteredDataLabels {
+        data: labels
+    };
+    let mut labels_buf = Vec::new();
+    labels.encode(&mut labels_buf).expect("Error encoding labels");
+    drop(labels);
+    let mut labels_file = BufWriter::new(File::create(filepath_labels)?);
+    labels_file.write_all(&labels_buf).expect("Error writing labels to file");
+
+
     let filepath_centroids = format!("{}/centroids_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
-    let output_file_labels = File::create(filepath_labels)?;
-    let output_file_centroids = File::create(filepath_centroids)?;
-
-
-    let mut writer_labels = BufWriter::new(output_file_labels);
-    let labels = Labels(labels.clone());
-    labels.serialize(&mut Serializer::new(&mut writer_labels))?;
-
-    let mut writer_centroids = BufWriter::new(output_file_centroids);
-    let centroids = Centroids(centroids.clone());
-    centroids.serialize(&mut Serializer::new(&mut writer_centroids))?;
+    let centroids = centroids.iter().map(|centroid| centroid.iter().map(|&value| value as u8).collect_vec()).collect_vec();
+    let centroids = ClusteredDataCentroids {
+        data: centroids
+    };
+    let mut centroids_buf = Vec::new();
+    centroids.encode(&mut centroids_buf).expect("Error encoding centroids");
+    let mut centroids_file = BufWriter::new(File::create(filepath_centroids)?);
+    centroids_file.write_all(&centroids_buf).expect("Error writing centroids to file");
 
     Ok(())
 }
@@ -48,19 +41,14 @@ fn convert_dataset(data: &[Vec<u8>]) -> Vec<Vec<u32>> {
 }
 
 fn load_data(filepath: &str) -> Result<Vec<Vec<u32>>, Box<dyn std::error::Error>> {
-    // Open the file in read-only mode
-    let file = File::open(filepath)?;
+    let mut buf_reader = BufReader::new(File::open(filepath)?);
+    let mut buf = Vec::new();
+    buf_reader.read_to_end(&mut buf)?;
 
-    // Create a buffered reader for efficient reading
-    let buf_reader = BufReader::new(file);
-
-    // Deserialize the data from the reader
-    // Deserializer automatically handles the data according to the Histograms structure
-    let mut deserializer = Deserializer::new(buf_reader);
-    let histograms: Histograms = Deserialize::deserialize(&mut deserializer)?;
-
-    println!("Loaded data: len() = {}", histograms.0.len());
-    return Ok(convert_dataset(histograms.data()));
+    let hand_strenght_histograms = HandStrengthHistograms::decode(&*buf)?;
+    println!("Loaded data: len() = {}", hand_strenght_histograms.data.len());
+    println!("hand_strenght_histograms.data: {:?}", hand_strenght_histograms.data);
+    return Ok(convert_dataset(&hand_strenght_histograms.data));
 }
 
 pub struct HistogramLoader {

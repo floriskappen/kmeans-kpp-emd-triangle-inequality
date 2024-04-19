@@ -1,3 +1,6 @@
+mod proto {
+    include!("proto/build/_.rs");
+}
 mod logger;
 mod load;
 mod distance;
@@ -12,7 +15,7 @@ use crate::logger::init_logger;
 
 fn kmeans(data: &Vec<Vec<u32>>, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
     let mut best_centroids: Vec<Vec<u32>> = vec![];
-    let mut best_labels: Vec<usize> = vec![];
+    let mut best_labels: Vec<u32> = vec![];
     let mut best_inertia = std::f64::MAX;
     let mut inertia_per_initialization: Vec<f64> = vec![];
     let mut best_initialization_index = 0;
@@ -38,18 +41,23 @@ fn kmeans(data: &Vec<Vec<u32>>, round: usize, k: usize, max_iters: usize, conver
         }
 
         if !only_save_best {
-            save_data(&labels, &centroids, round, initialization_index).expect("Error saving labels... :(");
+            save_data(labels, centroids, round, initialization_index).expect("Error saving labels... :(");
+            if calculated_inertia < best_inertia {
+                best_inertia = calculated_inertia;
+                best_initialization_index = initialization_index;
+            };
+        } else {
+            if calculated_inertia < best_inertia {
+                best_inertia = calculated_inertia;
+                best_initialization_index = initialization_index;
+                // Keep track of the best one
+                if only_save_best {
+                    best_labels = labels;
+                    best_centroids = centroids;
+                }
+            };
         }
 
-        if calculated_inertia < best_inertia {
-            best_inertia = calculated_inertia;
-            best_initialization_index = initialization_index;
-            // Keep track of the best one
-            if only_save_best {
-                best_labels = labels;
-                best_centroids = centroids;
-            }
-        };
         inertia_per_initialization.push(calculated_inertia);
 
         log::info!("Finished KMeans for initialization #{} - Inertia: {}", initialization_index, calculated_inertia);
@@ -61,7 +69,7 @@ fn kmeans(data: &Vec<Vec<u32>>, round: usize, k: usize, max_iters: usize, conver
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
 
     if only_save_best {
-        save_data(&best_labels, &best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
+        save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
     }
 }
 
@@ -92,9 +100,9 @@ fn main() {
         &histogram_loader.histograms,
         round,
         8,
-        100,
+        200,
         0.0001,
-        1000,
+        20000,
         false,
         true);
 }

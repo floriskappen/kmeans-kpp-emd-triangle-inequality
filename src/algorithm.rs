@@ -26,7 +26,7 @@ pub fn kmeans_triangle_inequality(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<u32>>, Vec<usize>, f64), &'static str> {
+) -> Result<(Vec<Vec<u32>>, Vec<u32>, f64), &'static str> {
     if k > data.len() {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -116,7 +116,7 @@ pub fn kmeans_triangle_inequality(
         prev_centroids = centroids.clone();
     }
 
-    let final_labels = labels.iter().map(|x| x.load(Ordering::Relaxed)).collect::<Vec<_>>();
+    let final_labels: Vec<u32> = labels.iter().map(|x| x.load(Ordering::Relaxed) as u32).collect::<Vec<_>>();
 
     let inertia = calculate_inertia(data, &centroids.lock().unwrap(), &final_labels);
 
@@ -129,7 +129,7 @@ pub fn kmeans_default(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<u32>>, Vec<usize>, f64), &'static str> {
+) -> Result<(Vec<Vec<u32>>, Vec<u32>, f64), &'static str> {
     if k > data.len() {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -208,7 +208,7 @@ pub fn kmeans_default(
         prev_centroids = centroids.clone();
     }
 
-    let final_labels = labels.iter().map(|x| x.load(Ordering::Relaxed)).collect::<Vec<_>>();
+    let final_labels = labels.iter().map(|x| x.load(Ordering::Relaxed) as u32).collect::<Vec<_>>();
 
     let inertia = calculate_inertia(data, &centroids.lock().unwrap(), &final_labels);
 
