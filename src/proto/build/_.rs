@@ -20,6 +20,12 @@ pub struct OpponentClusterHandStrengthHistograms {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ClusteredDataCentroids {
-    #[prost(bytes = "vec", repeated, tag = "1")]
-    pub data: ::prost::alloc::vec::Vec<::prost::alloc::vec::Vec<u8>>,
+    #[prost(message, repeated, tag = "1")]
+    pub data: ::prost::alloc::vec::Vec<FloatList>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FloatList {
+    #[prost(float, repeated, tag = "1")]
+    pub values: ::prost::alloc::vec::Vec<f32>,
 }

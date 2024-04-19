@@ -5,11 +5,11 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use itertools::Itertools;
 use std::error::Error;
 
-use crate::proto::{ClusteredDataCentroids, ClusteredDataLabels, HandStrengthHistograms};
+use crate::proto::{ClusteredDataCentroids, ClusteredDataLabels, FloatList, HandStrengthHistograms};
 
 static EXPORT_PATH: &str = "./data_out";
 
-pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<u32>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<f32>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
     let filepath_labels = format!("{}/labels_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
     let labels = ClusteredDataLabels {
         data: labels
@@ -22,9 +22,9 @@ pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<u32>>, round: usize, initi
 
 
     let filepath_centroids = format!("{}/centroids_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
-    let centroids = centroids.iter().map(|centroid| centroid.iter().map(|&value| value as u8).collect_vec()).collect_vec();
+    // let centroids = centroids.iter().map(|centroid| centroid.iter().map(|&value| value as u8).collect_vec()).collect_vec();
     let centroids = ClusteredDataCentroids {
-        data: centroids
+        data: centroids.iter().map(|centroid| FloatList { values: centroid.clone() }).collect_vec()
     };
     let mut centroids_buf = Vec::new();
     centroids.encode(&mut centroids_buf).expect("Error encoding centroids");
@@ -34,28 +34,21 @@ pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<u32>>, round: usize, initi
     Ok(())
 }
 
-fn convert_dataset(data: &[Vec<u8>]) -> Vec<Vec<u32>> {
-    data.iter()
-        .map(|vec| vec.iter().map(|&val| val as u32).collect())
-        .collect()
-}
-
-fn load_data(filepath: &str) -> Result<Vec<Vec<u32>>, Box<dyn std::error::Error>> {
+fn load_data(filepath: &str) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>> {
     let mut buf_reader = BufReader::new(File::open(filepath)?);
     let mut buf = Vec::new();
     buf_reader.read_to_end(&mut buf)?;
 
     let hand_strenght_histograms = HandStrengthHistograms::decode(&*buf)?;
     println!("Loaded data: len() = {}", hand_strenght_histograms.data.len());
-    println!("hand_strenght_histograms.data: {:?}", hand_strenght_histograms.data);
-    return Ok(convert_dataset(&hand_strenght_histograms.data));
+    return Ok(hand_strenght_histograms.data);
 }
 
 pub struct HistogramLoader {
     pub folder_path: String,
     pub filenames: Vec<String>,
     pub round: usize,
-    pub histograms: Vec<Vec<u32>>,
+    pub histograms: Vec<Vec<u8>>,
 }
 
 impl HistogramLoader {
@@ -81,7 +74,7 @@ impl HistogramLoader {
             .collect();
         println!("round filenames: {:?}", round_filenames);
 
-        let mut histograms: Vec<Vec<u32>> = vec![];
+        let mut histograms: Vec<Vec<u8>> = vec![];
         for (index, round_batch_filename) in round_filenames.iter().enumerate() {
             let filepath = format!("{}/{}", &folder_path, round_batch_filename);
             let batch_histograms = load_data(&filepath)?;

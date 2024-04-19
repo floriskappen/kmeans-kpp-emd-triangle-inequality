@@ -13,8 +13,8 @@ use load::{save_data, HistogramLoader};
 use algorithm::{kmeans_triangle_inequality, kmeans_default};
 use crate::logger::init_logger;
 
-fn kmeans(data: &Vec<Vec<u32>>, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
-    let mut best_centroids: Vec<Vec<u32>> = vec![];
+fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
+    let mut best_centroids: Vec<Vec<f32>> = vec![];
     let mut best_labels: Vec<u32> = vec![];
     let mut best_inertia = std::f64::MAX;
     let mut inertia_per_initialization: Vec<f64> = vec![];
@@ -57,13 +57,12 @@ fn kmeans(data: &Vec<Vec<u32>>, round: usize, k: usize, max_iters: usize, conver
                 }
             };
         }
-
         inertia_per_initialization.push(calculated_inertia);
 
         log::info!("Finished KMeans for initialization #{} - Inertia: {}", initialization_index, calculated_inertia);
 
     }
-    
+
     log::info!("Finished all initializations!");
     log::info!("Inertia per initialization: {:?}", inertia_per_initialization);
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
@@ -93,16 +92,16 @@ fn main() {
         vec![37, 122],
     ];
 
-    let round = 0;
+    let round = 1;
     let histogram_loader = HistogramLoader::new(round).expect("Failed to initialize HandLoader");
 
     kmeans(
         &histogram_loader.histograms,
         round,
-        8,
         200,
-        0.0001,
-        20000,
-        false,
-        true);
+        251,
+        0.001,
+        1,
+        true,
+        false);
 }

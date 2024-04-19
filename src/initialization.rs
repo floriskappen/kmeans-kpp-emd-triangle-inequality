@@ -1,15 +1,16 @@
+use itertools::Itertools;
 use rand::{distributions::{Distribution, WeightedIndex}, Rng};
 use rayon::prelude::*;
 
-use crate::distance::earth_movers_distance;
+use crate::distance::earth_movers_distance_centroid;
 
-pub fn kmeans_plusplus(data: &[Vec<u32>], k: usize) -> Vec<Vec<u32>> {
+pub fn kmeans_plusplus(data: &[Vec<u8>], k: usize) -> Vec<Vec<f32>> {
     let mut rng = rand::thread_rng();
-    let mut centroids: Vec<Vec<u32>> = Vec::new();
+    let mut centroids: Vec<Vec<f32>> = Vec::new();
 
     // Randomly select the first centroid
     let first_idx = rng.gen_range(0..data.len());
-    centroids.push(data[first_idx].clone());
+    centroids.push(data[first_idx].clone().iter().map(|&val| val as f32).collect_vec());
 
     if k == 1 {
         return centroids;
@@ -23,14 +24,14 @@ pub fn kmeans_plusplus(data: &[Vec<u32>], k: usize) -> Vec<Vec<u32>> {
         min_distances.par_iter_mut()
             .enumerate()
             .for_each(|(idx, min_dist)| {
-                let distance = earth_movers_distance(&data[idx], &centroids.last().unwrap());
+                let distance = earth_movers_distance_centroid(&data[idx], &centroids.last().unwrap());
                 *min_dist = (*min_dist).min(distance);
             });
 
         // Efficient weighted selection using the WeightedIndex distribution
         let dist = WeightedIndex::new(&min_distances).unwrap();
         let next_centroid_idx = dist.sample(&mut rng);
-        centroids.push(data[next_centroid_idx].clone());
+        centroids.push(data[next_centroid_idx].clone().iter().map(|&val| val as f32).collect_vec());
     }
 
     centroids
