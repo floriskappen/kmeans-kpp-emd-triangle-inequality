@@ -53,7 +53,7 @@ pub struct HistogramLoader {
 
 impl HistogramLoader {
     pub fn new(round: usize) -> Result<Self, Box<dyn Error>> {
-        let folder_path = "/Users/kade/git/personal/pluribus/kmeans-kpp-emd-triangle-inequality/data_in".to_string();
+        let folder_path = "./data_in".to_string();
 
         let entries = fs::read_dir(&folder_path)?;
         let all_filenames: Vec<String> = entries.map(|entry| {
