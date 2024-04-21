@@ -89,6 +89,8 @@ fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_ite
 
     }
 
+    // println!("labels: {:?}", best_labels);
+
     log::info!("Finished all initializations!");
     log::info!("Inertia per initialization: {:?}", inertia_per_initialization);
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);

@@ -21,21 +21,20 @@ pub fn kmeans_plusplus_euclidian(data: &[u8], histogram_size: usize, k: usize) -
 
     // Select k-1 remaining centroids
     for _ in 1..k {
-        // Update the minimum distances in parallel
+        // Compute distances to the last added centroid and update min_distances
+        let last_centroid = centroids.last().unwrap();
         min_distances.par_iter_mut()
             .enumerate()
             .for_each(|(idx, min_dist)| {
                 let start_index = idx * histogram_size;
-                let distance = centroids.iter().map(|centroid| euclidian_distance(
-                    &data[start_index..start_index + histogram_size].iter().map(|&v| v as f64).collect(),
-                    &centroid.iter().map(|&v| v as f64).collect()
-                )).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
-                *min_dist = distance as f32;
+                let histogram_as_f32: Vec<f64> = data[start_index..start_index + histogram_size].iter().map(|&v| v as f64).collect();
+                let distance = euclidian_distance(&histogram_as_f32, &last_centroid.iter().map(|&v| v as f64).collect());
+                *min_dist = (*min_dist).min(distance as f32);
             });
-
-        // Efficient weighted selection using the WeightedIndex distribution
+    
+        // Select next centroid based on updated min_distances
         let dist = WeightedIndex::new(&min_distances).unwrap();
-        let next_centroid_idx = dist.sample(&mut rng);
+        let next_centroid_idx = dist.sample(&mut rng) * histogram_size;
         centroids.push(data[next_centroid_idx..next_centroid_idx + histogram_size].iter().map(|&val| val as f32).collect_vec());
     }
 
