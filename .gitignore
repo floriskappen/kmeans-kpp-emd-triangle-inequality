@@ -17,6 +17,5 @@ Cargo.lock
 # Added by cargo
 
 /target
-/data_in/*.bin
-/data_out/*.bin
+*.bin
 .DS_Store
