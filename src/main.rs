@@ -89,10 +89,9 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
     log::info!("Inertia per initialization: {:?}", inertia_per_initialization);
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
 
-    println!("labels: {:?}", best_labels);
-    // if only_save_best {
-    //     save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
-    // }
+    if only_save_best {
+        save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
+    }
 }
 
 fn main() {
@@ -115,17 +114,17 @@ fn main() {
         vec![37, 122],
     ];
 
-    let round = 5;
+    let round = 2;
     let histogram_loader = HistogramLoader::new(round).expect("Failed to initialize HandLoader");
 
     kmeans(
         &histogram_loader.histograms,
         round,
-        10,
+        200,
         301,
-        0.00001,
-        10,
+        0.0001,
+        6,
         true,
         true,
-        true);
+        false);
 }

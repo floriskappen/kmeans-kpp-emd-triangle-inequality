@@ -68,18 +68,26 @@ impl HistogramLoader {
             .filter(|file_name| file_name != "")
             .collect_vec();
 
-        let round_filenames: Vec<String> = all_filenames.iter()
+        let mut round_filenames: Vec<String> = all_filenames.iter()
             .cloned()
             .filter(|file_name| file_name.starts_with(format!("round_{}_batch_", round).as_str()))
             .collect();
+        round_filenames.sort_by_key(|filename| {
+            filename
+                .split('_')
+                .nth(3)  // This gets the part of the filename with the batch number
+                .and_then(|s| s.split('.').next())  // Remove the file extension
+                .and_then(|num| num.parse::<i32>().ok())  // Parse the number part as i32
+                .unwrap_or(0)  // Default to 0 if any parsing fails
+        });
         println!("round filenames: {:?}", round_filenames);
 
         let mut histograms: Vec<Vec<u8>> = vec![];
-        for (index, round_batch_filename) in round_filenames.iter().enumerate() {
+        for (_, round_batch_filename) in round_filenames.iter().enumerate() {
             let filepath = format!("{}/{}", &folder_path, round_batch_filename);
             let batch_histograms = load_data(&filepath)?;
+            println!("Loaded file {}, contains {} entries", round_batch_filename, batch_histograms.len());
             histograms.extend(batch_histograms);
-            println!("Loaded data batch #{}", index+1);
         }
 
         return Ok(Self {
