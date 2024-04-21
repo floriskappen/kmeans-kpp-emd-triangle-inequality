@@ -1,5 +1,4 @@
 
-use chrono::round;
 use prost::Message;
 use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read, Write};
@@ -41,7 +40,7 @@ fn load_data(filepath: &str) -> Result<Vec<Vec<u8>>, Box<dyn std::error::Error>>
     buf_reader.read_to_end(&mut buf)?;
 
     let hand_strenght_histograms = HandStrengthHistograms::decode(&*buf)?;
-    println!("Loaded data: len() = {}", hand_strenght_histograms.data.len());
+    log::info!("Loaded data from {}; len() = {}", filepath, hand_strenght_histograms.data.len());
     return Ok(hand_strenght_histograms.data);
 }
 

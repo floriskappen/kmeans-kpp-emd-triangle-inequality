@@ -121,7 +121,7 @@ fn main() {
     ];
 
     let round = 3;
-    let histogram_size = 8;
+    let histogram_size = 50;
     let histogram_loader = HistogramLoader::new(round, histogram_size).expect("Failed to initialize HandLoader");
 
     kmeans(
@@ -131,7 +131,7 @@ fn main() {
         200,
         250,
         0.0001,
-        4,
+        5,
         true,
         true,
         false);
