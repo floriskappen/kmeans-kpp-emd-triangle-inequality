@@ -10,10 +10,10 @@ mod algorithm;
 mod inertia;
 
 use load::{save_data, HistogramLoader};
-use algorithm::{kmeans_triangle_inequality, kmeans_default};
+use algorithm::{kmeans_emd, kmeans_emd_triangle_inequality, kmeans_euclidian, kmeans_euclidian_triangle_inequality};
 use crate::logger::init_logger;
 
-fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
+fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, euclidian_distance: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
     let mut best_centroids: Vec<Vec<f32>> = vec![];
     let mut best_labels: Vec<u32> = vec![];
     let mut best_inertia = std::f64::MAX;
@@ -25,19 +25,41 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
         let labels;
         let calculated_inertia;
         if triangle_inequality {
-            (centroids, labels, calculated_inertia) = kmeans_triangle_inequality(
-                data,
-                k,
-                max_iters,
-                convergence_threshold
-            ).expect("error during kmeans");
+            if euclidian_distance {
+                log::info!("Starting KMeans with L2 (Euclidian) distance & triangle inequality");
+                (centroids, labels, calculated_inertia) = kmeans_euclidian_triangle_inequality(
+                    data,
+                    k,
+                    max_iters,
+                    convergence_threshold
+                ).expect("error during kmeans");
+            } else {
+                log::info!("Starting KMeans with Earth Mover's Distance & triangle inequality");
+                (centroids, labels, calculated_inertia) = kmeans_emd_triangle_inequality(
+                    data,
+                    k,
+                    max_iters,
+                    convergence_threshold
+                ).expect("error during kmeans");
+            }
         } else {
-            (centroids, labels, calculated_inertia) = kmeans_default(
-                data,
-                k,
-                max_iters,
-                convergence_threshold
-            ).expect("error during kmeans");
+            if euclidian_distance {
+                log::info!("Starting KMeans with L2 (Euclidian) distance");
+                (centroids, labels, calculated_inertia) = kmeans_euclidian(
+                    data,
+                    k,
+                    max_iters,
+                    convergence_threshold
+                ).expect("error during kmeans");
+            } else {
+                log::info!("Starting KMeans with Earth Mover's Distance");
+                (centroids, labels, calculated_inertia) = kmeans_emd(
+                    data,
+                    k,
+                    max_iters,
+                    convergence_threshold
+                ).expect("error during kmeans");
+            }
         }
 
         if !only_save_best {
@@ -67,9 +89,10 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
     log::info!("Inertia per initialization: {:?}", inertia_per_initialization);
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
 
-    if only_save_best {
-        save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
-    }
+    println!("labels: {:?}", best_labels);
+    // if only_save_best {
+    //     save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
+    // }
 }
 
 fn main() {
@@ -92,16 +115,17 @@ fn main() {
         vec![37, 122],
     ];
 
-    let round = 1;
+    let round = 5;
     let histogram_loader = HistogramLoader::new(round).expect("Failed to initialize HandLoader");
 
     kmeans(
         &histogram_loader.histograms,
         round,
-        200,
-        251,
-        0.001,
+        10,
+        301,
+        0.0001,
         1,
         true,
-        false);
+        true,
+        true);
 }

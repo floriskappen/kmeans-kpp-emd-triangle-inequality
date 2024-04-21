@@ -70,7 +70,7 @@ impl HistogramLoader {
 
         let round_filenames: Vec<String> = all_filenames.iter()
             .cloned()
-            .filter(|file_name| file_name.starts_with(format!("hsh_round_{}_batch_", round).as_str()))
+            .filter(|file_name| file_name.starts_with(format!("round_{}_batch_", round).as_str()))
             .collect();
         println!("round filenames: {:?}", round_filenames);
 
@@ -90,4 +90,3 @@ impl HistogramLoader {
         })
     }
 }
-
