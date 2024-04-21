@@ -103,49 +103,66 @@ pub fn kmeans_euclidian_triangle_inequality(
 
     let mut labels: Vec<u32> = vec![0; data.len()];
     let mut prev_centroids = centroids.clone();
+    let mut min_distances_squared = vec![std::f64::MAX; data.len()];
+    let mut lower_bounds = vec![0.0; data.len() * k];
     let mut upper_bounds = vec![std::f64::MAX; data.len()];
-    let mut lower_bounds = vec![0.0; data.len()];
 
     for iter in 0..max_iters {
         let cluster_sizes: Vec<AtomicI32> = (0..k).map(|_| AtomicI32::new(0)).collect_vec();
 
-        // Update upper and lower bounds
-        data.par_iter().zip(&mut upper_bounds).zip(&mut lower_bounds).for_each(|((point, upper_bound), lower_bound)| {
-            *upper_bound = centroids.par_iter()
-                .map(|c| euclidian_distance(&c.iter().map(|&v| v as f64).collect(), &point.iter().map(|&v| v as f64).collect()).powi(2))
-                .min_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap();
+        // Update lower bounds and upper bounds
+        data.par_iter()
+            .enumerate()
+            .zip(lower_bounds.par_chunks_mut(k))
+            .zip(upper_bounds.par_iter_mut())
+            .for_each(|(((point_idx, point), lower_bounds_chunk), upper_bound)| {
+                for (centroid_idx, lower_bound) in lower_bounds_chunk.iter_mut().enumerate() {
+                    let distance_squared = euclidian_distance(
+                        &point.iter().map(|&v| v as f64).collect(),
+                        &centroids[centroid_idx].iter().map(|&v| v as f64).collect(),
+                    )
+                    .powi(2);
+                    *lower_bound = distance_squared;
+                }
+                *upper_bound = lower_bounds_chunk[labels[point_idx] as usize];
+            });
 
-            *lower_bound = centroids.par_iter()
-                .map(|c| euclidian_distance(&c.iter().map(|&v| v as f64).collect(), &point.iter().map(|&v| v as f64).collect()).powi(2))
-                .max_by(|a, b| a.partial_cmp(b).unwrap())
-                .unwrap() / 4.0;
-        });
-
-        // Use triangle inequality optimization
-        data.par_iter().zip(&upper_bounds).zip(&lower_bounds).zip(&mut labels).for_each(|(((point, upper_bound), lower_bound), label)| {
-            let mut best_centroid_idx = *label as usize;
-            let mut best_distance_squared = *upper_bound;
-
-            for (centroid_idx, centroid) in centroids.iter().enumerate() {
-                if best_distance_squared > *lower_bound {
-                    let distance_squared = euclidian_distance(&centroid.iter().map(|&v| v as f64).collect(), &point.iter().map(|&v| v as f64).collect()).powi(2);
-                    if distance_squared < best_distance_squared {
-                        best_centroid_idx = centroid_idx;
-                        best_distance_squared = distance_squared;
+        // Assign points to clusters
+        data.par_iter()
+            .enumerate()
+            .zip(min_distances_squared.par_iter_mut())
+            .zip(labels.par_iter_mut())
+            .zip(upper_bounds.par_iter_mut())
+            .for_each(|((((point_idx, point), min_distance_squared), label), upper_bound)| {
+                let mut best_centroid_idx = *label as usize;
+                let mut best_distance_squared = *min_distance_squared;
+                let start_idx = point_idx * k;
+                let end_idx = start_idx + k;
+                for (centroid_idx, &lower_bound) in lower_bounds[start_idx..end_idx].iter().enumerate() {
+                    if *upper_bound > lower_bound {
+                        let distance_squared = euclidian_distance(
+                            &point.iter().map(|&v| v as f64).collect(),
+                            &centroids[centroid_idx].iter().map(|&v| v as f64).collect(),
+                        )
+                        .powi(2);
+                        if distance_squared < best_distance_squared {
+                            best_centroid_idx = centroid_idx;
+                            best_distance_squared = distance_squared;
+                        }
                     }
                 }
-            }
+                if best_centroid_idx != *label as usize {
+                    *label = best_centroid_idx as u32;
+                    *min_distance_squared = best_distance_squared;
+                    *upper_bound = best_distance_squared;
+                }
+                cluster_sizes[best_centroid_idx].fetch_add(1, Ordering::Relaxed);
+            });
 
-            *label = best_centroid_idx as u32;
-            cluster_sizes[best_centroid_idx].fetch_add(1, Ordering::Relaxed);
-        });
-
-        let cluster_sizes: Vec<i32> = cluster_sizes.iter()
-            .map(|atomic| atomic.load(Ordering::SeqCst))
-            .collect();
+        let cluster_sizes: Vec<i32> = cluster_sizes.iter().map(|atomic| atomic.load(Ordering::SeqCst)).collect();
 
         let mut new_centroids = vec![vec![0f32; data[0].len()]; k];
+
         for (point, &label) in data.iter().zip(&labels) {
             for (c, &p) in new_centroids[label as usize].iter_mut().zip(point) {
                 *c += p as f32;
@@ -164,22 +181,23 @@ pub fn kmeans_euclidian_triangle_inequality(
             }
         }
 
-        let frobenius_norm = calculate_frobenius_norm(&centroids, &prev_centroids);
-        let new_centroids_norm = centroids.par_iter()
-            .map(|centroid| centroid.par_iter().map(|&x| (x as f64).powi(2)).sum::<f64>())
-            .sum::<f64>()
-            .sqrt();
-
-        if frobenius_norm / new_centroids_norm < convergence_threshold {
-            log::info!("Converged after {} iterations", iter + 1);
-            break;
-        }
-
-        prev_centroids = centroids.clone();
-
-        if iter > 0 && iter % 10 == 0 {
-            let inertia = calculate_inertia_euclidian(data, &centroids, &labels);
-            log::info!("Finished iteration {} with an inertia of {}", iter, inertia);
+        // Only even iterations will be good
+        if iter > 0 && iter % 2 != 0 {
+            let frobenius_norm = calculate_frobenius_norm(&centroids, &prev_centroids);
+            let new_centroids_norm = centroids
+                .par_iter()
+                .map(|centroid| centroid.par_iter().map(|&x| (x as f64).powi(2)).sum::<f64>())
+                .sum::<f64>()
+                .sqrt();
+            if frobenius_norm / new_centroids_norm < convergence_threshold {
+                log::info!("Converged after {} iterations", iter + 1);
+                break;
+            }
+            prev_centroids = centroids.clone();
+            if (iter - 1) % 10 == 0 {
+                let inertia = calculate_inertia_euclidian(data, &centroids, &labels);
+                log::info!("Finished iteration {} with an inertia of {}", iter, inertia);
+            }
         }
     }
 
@@ -356,7 +374,7 @@ pub fn kmeans_emd(
                 *centroid = data.choose(&mut nested_thread_rng).unwrap().iter().map(|&val| val as f32).collect_vec();
             }
         });
-        // println!("centroids[1]: {:?}", centroids[1]);
+
         let frobenius_norm = calculate_frobenius_norm(&centroids, &prev_centroids);
         let new_centroids_norm = centroids.par_iter()
             .map(|centroid| centroid.par_iter().map(|&x| (x as f64).powi(2)).sum::<f64>())
