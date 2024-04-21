@@ -114,7 +114,7 @@ fn main() {
         vec![37, 122],
     ];
 
-    let round = 2;
+    let round = 3;
     let histogram_loader = HistogramLoader::new(round).expect("Failed to initialize HandLoader");
 
     kmeans(
