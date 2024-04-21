@@ -89,15 +89,13 @@ fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_ite
 
     }
 
-    println!("labels: {:?}", best_labels);
-
     log::info!("Finished all initializations!");
     log::info!("Inertia per initialization: {:?}", inertia_per_initialization);
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
 
-    // if only_save_best {
-    //     save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
-    // }
+    if only_save_best {
+        save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
+    }
 }
 
 fn main() {
