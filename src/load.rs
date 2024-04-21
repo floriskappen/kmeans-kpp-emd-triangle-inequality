@@ -1,4 +1,5 @@
 
+use chrono::round;
 use prost::Message;
 use std::fs::{self, File};
 use std::io::{BufReader, BufWriter, Read, Write};
@@ -82,13 +83,30 @@ impl HistogramLoader {
         });
         println!("round filenames: {:?}", round_filenames);
 
-        let mut histograms: Vec<Vec<u8>> = vec![];
-        for (_, round_batch_filename) in round_filenames.iter().enumerate() {
-            let filepath = format!("{}/{}", &folder_path, round_batch_filename);
-            let batch_histograms = load_data(&filepath)?;
-            println!("Loaded file {}, contains {} entries", round_batch_filename, batch_histograms.len());
-            histograms.extend(batch_histograms);
+        // Pre-calculate the total number of histogram entries
+        let total_entries = round_filenames.iter()
+            .map(|filename| {
+                let filepath = format!("{}/{}", &folder_path, filename);
+                let mut buf_reader = BufReader::new(File::open(&filepath).unwrap());
+                let mut buf = Vec::new();
+                buf_reader.read_to_end(&mut buf).unwrap();
+                let histograms = HandStrengthHistograms::decode(&*buf).unwrap();
+                histograms.data.len()
+            })
+            .sum::<usize>();
+
+        log::info!("scanned files to find {} entries", total_entries);
+
+        // Allocate memory efficiently knowing each histogram is of size 8 bytes
+        let mut histograms: Vec<Vec<u8>> = Vec::with_capacity(total_entries);
+        for filename in &round_filenames {
+            let filepath = format!("{}/{}", &folder_path, filename);
+            let mut file_histograms = load_data(&filepath)?;
+            file_histograms.iter_mut().for_each(|histogram| histogram.reserve_exact(8)); // Ensuring each histogram has exactly 8 bytes
+            histograms.append(&mut file_histograms);
         }
+        
+        log::info!("loaded data from {} files to memory", round_filenames.len());
 
         return Ok(Self {
             folder_path,
