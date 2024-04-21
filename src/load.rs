@@ -102,10 +102,17 @@ impl HistogramLoader {
         for filename in &round_filenames {
             let filepath = format!("{}/{}", &folder_path, filename);
             let mut file_histograms = load_data(&filepath)?;
-            file_histograms.iter_mut().for_each(|histogram| histogram.reserve_exact(8)); // Ensuring each histogram has exactly 8 bytes
-            histograms.append(&mut file_histograms);
+            
+            // Ensure each histogram uses exactly the memory it needs, set to 8 bytes
+            file_histograms.iter_mut().for_each(|histogram| {
+                let mut optimized_histogram = Vec::with_capacity(8);
+                optimized_histogram.extend_from_slice(histogram);
+                histograms.push(optimized_histogram);
+            });
+
+            log::info!("loaded file {}", filename);
         }
-        
+
         log::info!("loaded data from {} files to memory", round_filenames.len());
 
         return Ok(Self {
