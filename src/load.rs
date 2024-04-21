@@ -49,11 +49,11 @@ pub struct HistogramLoader {
     pub folder_path: String,
     pub filenames: Vec<String>,
     pub round: usize,
-    pub histograms: Vec<Vec<u8>>,
+    pub histograms: Vec<u8>,
 }
 
 impl HistogramLoader {
-    pub fn new(round: usize) -> Result<Self, Box<dyn Error>> {
+    pub fn new(round: usize, histogram_size: usize) -> Result<Self, Box<dyn Error>> {
         let folder_path = "./data_in".to_string();
 
         let entries = fs::read_dir(&folder_path)?;
@@ -97,20 +97,15 @@ impl HistogramLoader {
 
         log::info!("scanned files to find {} entries", total_entries);
 
-        // Allocate memory efficiently knowing each histogram is of size 8 bytes
-        let mut histograms: Vec<Vec<u8>> = Vec::with_capacity(total_entries);
+        // Allocate memory
+        let mut histograms: Vec<u8> = Vec::with_capacity(total_entries * histogram_size);
+
         for filename in &round_filenames {
             let filepath = format!("{}/{}", &folder_path, filename);
-            let mut file_histograms = load_data(&filepath)?;
-            
-            // Ensure each histogram uses exactly the memory it needs, set to 8 bytes
-            file_histograms.iter_mut().for_each(|histogram| {
-                let mut optimized_histogram = Vec::with_capacity(8);
-                optimized_histogram.extend_from_slice(histogram);
-                histograms.push(optimized_histogram);
-            });
-
-            log::info!("loaded file {}", filename);
+            let file_histograms = load_data(&filepath)?;
+            for histogram in file_histograms {
+                histograms.extend_from_slice(&histogram);
+            }
         }
 
         log::info!("loaded data from {} files to memory", round_filenames.len());

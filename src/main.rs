@@ -13,7 +13,7 @@ use load::{save_data, HistogramLoader};
 use algorithm::{kmeans_emd, kmeans_emd_triangle_inequality, kmeans_euclidian, kmeans_euclidian_triangle_inequality};
 use crate::logger::init_logger;
 
-fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, euclidian_distance: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
+fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, euclidian_distance: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
     let mut best_centroids: Vec<Vec<f32>> = vec![];
     let mut best_labels: Vec<u32> = vec![];
     let mut best_inertia = std::f64::MAX;
@@ -29,6 +29,7 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
                 log::info!("Starting KMeans with L2 (Euclidian) distance & triangle inequality");
                 (centroids, labels, calculated_inertia) = kmeans_euclidian_triangle_inequality(
                     data,
+                    histogram_size,
                     k,
                     max_iters,
                     convergence_threshold
@@ -37,6 +38,7 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
                 log::info!("Starting KMeans with Earth Mover's Distance & triangle inequality");
                 (centroids, labels, calculated_inertia) = kmeans_emd_triangle_inequality(
                     data,
+                    histogram_size,
                     k,
                     max_iters,
                     convergence_threshold
@@ -47,6 +49,7 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
                 log::info!("Starting KMeans with L2 (Euclidian) distance");
                 (centroids, labels, calculated_inertia) = kmeans_euclidian(
                     data,
+                    histogram_size,
                     k,
                     max_iters,
                     convergence_threshold
@@ -55,6 +58,7 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
                 log::info!("Starting KMeans with Earth Mover's Distance");
                 (centroids, labels, calculated_inertia) = kmeans_emd(
                     data,
+                    histogram_size,
                     k,
                     max_iters,
                     convergence_threshold
@@ -85,13 +89,15 @@ fn kmeans(data: &Vec<Vec<u8>>, round: usize, k: usize, max_iters: usize, converg
 
     }
 
+    println!("labels: {:?}", best_labels);
+
     log::info!("Finished all initializations!");
     log::info!("Inertia per initialization: {:?}", inertia_per_initialization);
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
 
-    if only_save_best {
-        save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
-    }
+    // if only_save_best {
+    //     save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
+    // }
 }
 
 fn main() {
@@ -115,15 +121,17 @@ fn main() {
     ];
 
     let round = 3;
-    let histogram_loader = HistogramLoader::new(round).expect("Failed to initialize HandLoader");
+    let histogram_size = 8;
+    let histogram_loader = HistogramLoader::new(round, histogram_size).expect("Failed to initialize HandLoader");
 
     kmeans(
         &histogram_loader.histograms,
+        histogram_size,
         round,
         200,
-        301,
+        250,
         0.0001,
-        6,
+        4,
         true,
         true,
         false);
