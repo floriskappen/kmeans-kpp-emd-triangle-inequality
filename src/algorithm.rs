@@ -188,27 +188,22 @@ pub fn kmeans_euclidian_triangle_inequality(
             }
         }
 
-        // Check for convergence
-        if iter > 0 && iter % 2 != 0 {
-            let frobenius_norm = calculate_frobenius_norm(&centroids, &prev_centroids);
-            let new_centroids_norm = centroids
-                .par_iter()
-                .map(|centroid| centroid.par_iter().map(|&x| x.powi(2)).sum::<f64>())
-                .sum::<f64>()
-                .sqrt();
+        let frobenius_norm = calculate_frobenius_norm(&centroids, &prev_centroids);
+        let new_centroids_norm = centroids
+            .par_iter()
+            .map(|centroid| centroid.par_iter().map(|&x| x.powi(2)).sum::<f64>())
+            .sum::<f64>()
+            .sqrt();
 
-            if frobenius_norm / new_centroids_norm < convergence_threshold {
-                log::info!("Converged after {} iterations", iter + 1);
-                break;
-            }
-
-            prev_centroids = centroids.clone();
-
-            if (iter - 1) % 10 == 0 {
-                let inertia = calculate_inertia_euclidian(data, histogram_size, &centroids, &labels);
-                log::info!("Finished iteration {} with an inertia of {}", iter, inertia);
-            }
+        if frobenius_norm / new_centroids_norm < convergence_threshold {
+            log::info!("Converged after {} iterations", iter + 1);
+            break;
         }
+
+        prev_centroids = centroids.clone();
+
+        let inertia = calculate_inertia_euclidian(data, histogram_size, &centroids, &labels);
+        log::info!("Finished iteration {} with an inertia of {} and frobenius_norm of {}", iter, inertia, frobenius_norm / new_centroids_norm);
     }
 
     let inertia = calculate_inertia_euclidian(data, histogram_size, &centroids, &labels);
