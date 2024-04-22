@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+message ClusteredDataCentroidsLegacy {
+    repeated FloatList data = 1;
+}
+
+message FloatList {
+    repeated float values = 1;
+}

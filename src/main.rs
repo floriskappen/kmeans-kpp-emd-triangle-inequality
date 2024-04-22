@@ -10,10 +10,10 @@ mod inertia;
 
 use load::{load_potential_aware_data, save_data, HistogramLoader};
 use algorithm::{kmeans_emd, kmeans_emd_triangle_inequality, kmeans_euclidian, kmeans_euclidian_triangle_inequality};
-use crate::{algorithm::{kmeans_emd_f64, kmeans_emd_triangle_inequality_f64}, load::save_data_f64, logger::init_logger};
+use crate::{algorithm::{kmeans_emd_f64, kmeans_emd_triangle_inequality_f64}, logger::init_logger};
 
 fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, euclidian_distance: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
-    let mut best_centroids: Vec<Vec<f32>> = vec![];
+    let mut best_centroids: Vec<Vec<f64>> = vec![];
     let mut best_labels: Vec<u32> = vec![];
     let mut best_inertia = std::f64::MAX;
     let mut inertia_per_initialization: Vec<f64> = vec![];
@@ -132,7 +132,7 @@ fn kmeans_f64(data: &Vec<f64>, histogram_size: usize, round: usize, k: usize, ma
         }
 
         if !only_save_best {
-            save_data_f64(labels, centroids, round, initialization_index).expect("Error saving labels... :(");
+            save_data(labels, centroids, round, initialization_index).expect("Error saving labels... :(");
             if calculated_inertia < best_inertia {
                 best_inertia = calculated_inertia;
                 best_initialization_index = initialization_index;
@@ -161,7 +161,7 @@ fn kmeans_f64(data: &Vec<f64>, histogram_size: usize, round: usize, k: usize, ma
     log::info!("Best initialization is index #{} with {} inertia", best_initialization_index, best_inertia);
 
     if only_save_best {
-        save_data_f64(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
+        save_data(best_labels, best_centroids, round, best_initialization_index).expect("Error saving labels... :(");
     }
 }
 
@@ -212,7 +212,7 @@ fn main() {
         histogram_size,
         round,
         200,
-        251,
+        250,
         0.0001,
         5,
         true,

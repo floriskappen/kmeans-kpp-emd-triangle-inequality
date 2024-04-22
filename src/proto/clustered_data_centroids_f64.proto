@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-message ClusteredDataCentroidsF64 {
-    repeated DoubleList data = 1;
-}
-
-message DoubleList {
-    repeated double values = 1;
-}

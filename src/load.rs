@@ -5,36 +5,11 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use itertools::Itertools;
 use std::error::Error;
 
-use crate::proto::{ClusteredDataCentroids, ClusteredDataCentroidsF64, ClusteredDataLabels, DoubleList, FloatList, HandStrengthHistograms, EmdMatrix};
+use crate::proto::{ClusteredDataCentroids, ClusteredDataLabels, DoubleList, FloatList, HandStrengthHistograms, EmdMatrix};
 
 static EXPORT_PATH: &str = "./data_out";
 
-pub fn save_data_f64(labels: Vec<u32>, centroids: Vec<Vec<f64>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
-    let filepath_labels = format!("{}/labels_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
-    let labels = ClusteredDataLabels {
-        data: labels
-    };
-    let mut labels_buf = Vec::new();
-    labels.encode(&mut labels_buf).expect("Error encoding labels");
-    drop(labels);
-    let mut labels_file = BufWriter::new(File::create(filepath_labels)?);
-    labels_file.write_all(&labels_buf).expect("Error writing labels to file");
-
-
-    let filepath_centroids = format!("{}/centroids_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
-    // let centroids = centroids.iter().map(|centroid| centroid.iter().map(|&value| value as u8).collect_vec()).collect_vec();
-    let centroids = ClusteredDataCentroidsF64 {
-        data: centroids.iter().map(|centroid| DoubleList { values: centroid.clone() }).collect_vec()
-    };
-    let mut centroids_buf = Vec::new();
-    centroids.encode(&mut centroids_buf).expect("Error encoding centroids");
-    let mut centroids_file = BufWriter::new(File::create(filepath_centroids)?);
-    centroids_file.write_all(&centroids_buf).expect("Error writing centroids to file");
-
-    Ok(())
-}
-
-pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<f32>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<f64>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
     let filepath_labels = format!("{}/labels_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
     let labels = ClusteredDataLabels {
         data: labels
@@ -49,7 +24,7 @@ pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<f32>>, round: usize, initi
     let filepath_centroids = format!("{}/centroids_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
     // let centroids = centroids.iter().map(|centroid| centroid.iter().map(|&value| value as u8).collect_vec()).collect_vec();
     let centroids = ClusteredDataCentroids {
-        data: centroids.iter().map(|centroid| FloatList { values: centroid.clone() }).collect_vec()
+        data: centroids.iter().map(|centroid| DoubleList { values: centroid.clone() }).collect_vec()
     };
     let mut centroids_buf = Vec::new();
     centroids.encode(&mut centroids_buf).expect("Error encoding centroids");
