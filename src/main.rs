@@ -185,37 +185,37 @@ fn main() {
         vec![37, 122],
     ];
 
-    // let round = 3;
-    // let histogram_size = 50;
-    // let histogram_loader = HistogramLoader::new(round, histogram_size).expect("Failed to initialize HandLoader");
+    let round = 2;
+    let histogram_size = 30;
+    let histogram_loader = HistogramLoader::new(round, histogram_size).expect("Failed to initialize HandLoader");
 
-    // kmeans(
-    //     &histogram_loader.histograms,
+    kmeans(
+        &histogram_loader.histograms,
+        histogram_size,
+        round,
+        500,
+        101,
+        0.0001,
+        5,
+        true,
+        true,
+        false
+    );
+
+
+    // let round = 1;
+    // let histogram_size = 200;
+
+    // let potential_aware_emd_matrix = load_potential_aware_data().expect("Failed to load potential aware EMD matrix data");
+    // kmeans_f64(
+    //     &potential_aware_emd_matrix,
     //     histogram_size,
     //     round,
     //     200,
     //     250,
-    //     0.0001,
+    //     0.0005,
     //     5,
-    //     true,
-    //     true,
+    //     false,
     //     false
     // );
-
-
-    let round = 1;
-    let histogram_size = 200;
-
-    let potential_aware_emd_matrix = load_potential_aware_data().expect("Failed to load potential aware EMD matrix data");
-    kmeans_f64(
-        &potential_aware_emd_matrix,
-        histogram_size,
-        round,
-        200,
-        250,
-        0.0005,
-        5,
-        false,
-        false
-    );
 }
