@@ -28,7 +28,7 @@ pub fn kmeans_euclidian(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<f64>>, Vec<u32>, f64), &'static str> {
+) -> Result<(Vec<Vec<f64>>, Vec<u16>, f64), &'static str> {
     if k > data.len() / histogram_size {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -36,7 +36,7 @@ pub fn kmeans_euclidian(
     let mut centroids = kmeans_plusplus_euclidian(data, histogram_size, k);
     log::info!("initialized kmeans++");
     let num_histograms = data.len() / histogram_size;
-    let mut labels = vec![0u32; num_histograms];
+    let mut labels = vec![0u16; num_histograms];
     let mut prev_centroids = centroids.clone();
 
     for iter in 0..max_iters {
@@ -51,7 +51,7 @@ pub fn kmeans_euclidian(
                 })
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
-            *label = best_centroid_idx as u32;
+            *label = best_centroid_idx as u16;
         });
 
         let mut new_centroids = vec![vec![0f64; histogram_size]; k];
@@ -106,7 +106,7 @@ pub fn kmeans_euclidian_triangle_inequality(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<f64>>, Vec<u32>, f64), &'static str> {
+) -> Result<(Vec<Vec<f64>>, Vec<u16>, f64), &'static str> {
     if k > data.len() / histogram_size {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -115,7 +115,7 @@ pub fn kmeans_euclidian_triangle_inequality(
     log::info!("initialized kmeans++");
 
     let num_histograms = data.len() / histogram_size;
-    let mut labels: Vec<u32> = vec![0; num_histograms];
+    let mut labels: Vec<u16> = vec![0; num_histograms];
     let mut prev_centroids = centroids.clone();
     let mut min_distances_squared = vec![std::f64::MAX; num_histograms];
 
@@ -155,7 +155,7 @@ pub fn kmeans_euclidian_triangle_inequality(
                 }
 
                 if best_centroid_idx != *label as usize {
-                    *label = best_centroid_idx as u32;
+                    *label = best_centroid_idx as u16;
                     *min_distance_squared = best_distance_squared;
                 }
 
@@ -221,7 +221,7 @@ pub fn kmeans_emd_triangle_inequality(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<f64>>, Vec<u32>, f64), &'static str> {
+) -> Result<(Vec<Vec<f64>>, Vec<u16>, f64), &'static str> {
     if k > data.len() / histogram_size {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -231,9 +231,10 @@ pub fn kmeans_emd_triangle_inequality(
     let mut centroids = kmeans_plusplus_emd(data, histogram_size, k);  // Assumes updated to work with flat data
     log::info!("initialized kmeans++");
     let num_histograms = data.len() / histogram_size;
-    let mut labels: Vec<u32> = vec![0; num_histograms];
+    let mut labels: Vec<u16> = vec![0; num_histograms];
     let mut prev_centroids = centroids.clone();
     let mut min_distances = vec![std::f64::MAX; num_histograms];
+    
     for iter in 0..max_iters {
         let cluster_sizes: Vec<AtomicI32> = (0..k).map(|_| AtomicI32::new(0)).collect_vec();
 
@@ -259,7 +260,7 @@ pub fn kmeans_emd_triangle_inequality(
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
             *min_distance = best_distance;
-            *label = best_centroid_idx as u32;
+            *label = best_centroid_idx as u16;
             cluster_sizes[best_centroid_idx].fetch_add(1, Ordering::Relaxed);
         });
 
@@ -333,7 +334,7 @@ pub fn kmeans_emd(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<f64>>, Vec<u32>, f64), &'static str> {
+) -> Result<(Vec<Vec<f64>>, Vec<u16>, f64), &'static str> {
     if k > data.len() / histogram_size {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -341,7 +342,7 @@ pub fn kmeans_emd(
     println!("initial centroids: {:?}", centroids);
     log::info!("initialized kmeans++");
     let num_histograms = data.len() / histogram_size;
-    let mut labels: Vec<u32> = vec![0; num_histograms];
+    let mut labels: Vec<u16> = vec![0; num_histograms];
     let mut prev_centroids = centroids.clone();
 
     for iter in 0..max_iters {
@@ -363,7 +364,7 @@ pub fn kmeans_emd(
                 })
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
-            *label = best_centroid_idx as u32;
+            *label = best_centroid_idx as u16;
             cluster_sizes[best_centroid_idx].fetch_add(1, Ordering::Relaxed);
         });
 
@@ -432,7 +433,7 @@ pub fn kmeans_emd_triangle_inequality_f64(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<f64>>, Vec<u32>, f64), &'static str> {
+) -> Result<(Vec<Vec<f64>>, Vec<u16>, f64), &'static str> {
     if k > data.len() / histogram_size {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
@@ -440,7 +441,7 @@ pub fn kmeans_emd_triangle_inequality_f64(
     let mut centroids = kmeans_plusplus_emd_f64(data, histogram_size, k);  // Assumes updated to work with flat data
     log::info!("initialized kmeans++");
     let num_histograms = data.len() / histogram_size;
-    let mut labels: Vec<u32> = vec![0; num_histograms];
+    let mut labels: Vec<u16> = vec![0; num_histograms];
     let mut prev_centroids = centroids.clone();
     let mut min_distances = vec![std::f64::MAX; num_histograms];
     for iter in 0..max_iters {
@@ -468,7 +469,7 @@ pub fn kmeans_emd_triangle_inequality_f64(
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
             *min_distance = best_distance;
-            *label = best_centroid_idx as u32;
+            *label = best_centroid_idx as u16;
             cluster_sizes[best_centroid_idx].fetch_add(1, Ordering::Relaxed);
         });
 
@@ -525,7 +526,7 @@ pub fn kmeans_emd_triangle_inequality_f64(
         
         // if (iter-1) % 10 == 0 || iter % 10 == 0 {
             let inertia = calculate_inertia_emd_f64(data, histogram_size, &centroids, &labels);
-            log::info!("Finished iteration {} with an inertia of {} and probenius norm of {}", iter, inertia, frobenius_norm / new_centroids_norm);
+            log::info!("Finished iteration {} with an inertia of {} and frobenius norm of {}", iter, inertia, frobenius_norm / new_centroids_norm);
         // }
     }
     let inertia = calculate_inertia_emd_f64(data, histogram_size, &centroids, &labels);
@@ -539,15 +540,14 @@ pub fn kmeans_emd_f64(
     k: usize,
     max_iters: usize,
     convergence_threshold: f64,
-) -> Result<(Vec<Vec<f64>>, Vec<u32>, f64), &'static str> {
+) -> Result<(Vec<Vec<f64>>, Vec<u16>, f64), &'static str> {
     if k > data.len() / histogram_size {
         return Err("Number of clusters cannot be greater than the number of data points");
     }
     let mut centroids = kmeans_plusplus_emd_f64(data, histogram_size, k); // Ensure this function is also adapted to use flat data.
-    println!("initial centroids: {:?}", centroids);
     log::info!("initialized kmeans++");
     let num_histograms = data.len() / histogram_size;
-    let mut labels: Vec<u32> = vec![0; num_histograms];
+    let mut labels: Vec<u16> = vec![0; num_histograms];
     let mut prev_centroids = centroids.clone();
 
     for iter in 0..max_iters {
@@ -569,7 +569,7 @@ pub fn kmeans_emd_f64(
                 })
                 .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
                 .unwrap();
-            *label = best_centroid_idx as u32;
+            *label = best_centroid_idx as u16;
             cluster_sizes[best_centroid_idx].fetch_add(1, Ordering::Relaxed);
         });
 
@@ -626,7 +626,7 @@ pub fn kmeans_emd_f64(
         }
         prev_centroids = centroids.clone();
         let inertia = calculate_inertia_emd_f64(data, histogram_size, &centroids, &labels); // Ensure inertia calculation uses flat data.
-        println!("inertia: {}", inertia);
+        log::info!("iteration: {} inertia: {} frobenius norm: {}", iter, inertia, frobenius_norm / new_centroids_norm);
     }
     let inertia = calculate_inertia_emd_f64(data, histogram_size, &centroids, &labels); // Again, adjust inertia function.
     Ok((centroids, labels, inertia))

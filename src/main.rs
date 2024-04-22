@@ -12,9 +12,9 @@ use load::{load_potential_aware_data, save_data, HistogramLoader};
 use algorithm::{kmeans_emd, kmeans_emd_triangle_inequality, kmeans_euclidian, kmeans_euclidian_triangle_inequality};
 use crate::{algorithm::{kmeans_emd_f64, kmeans_emd_triangle_inequality_f64}, logger::init_logger};
 
-fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, euclidian_distance: bool, only_save_best: bool) /*-> Result<(Vec<Vec<u32>>, Vec<usize>), &'static str>*/ {
+fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, euclidian_distance: bool, only_save_best: bool) {
     let mut best_centroids: Vec<Vec<f64>> = vec![];
-    let mut best_labels: Vec<u32> = vec![];
+    let mut best_labels: Vec<u16> = vec![];
     let mut best_inertia = std::f64::MAX;
     let mut inertia_per_initialization: Vec<f64> = vec![];
     let mut best_initialization_index = 0;
@@ -102,7 +102,7 @@ fn kmeans(data: &Vec<u8>, histogram_size: usize, round: usize, k: usize, max_ite
 // High precision version of kmeans
 fn kmeans_f64(data: &Vec<f64>, histogram_size: usize, round: usize, k: usize, max_iters: usize, convergence_threshold: f64, num_initializations: usize, triangle_inequality: bool, only_save_best: bool) {
     let mut best_centroids: Vec<Vec<f64>> = vec![];
-    let mut best_labels: Vec<u32> = vec![];
+    let mut best_labels: Vec<u16> = vec![];
     let mut best_inertia = std::f64::MAX;
     let mut inertia_per_initialization: Vec<f64> = vec![];
     let mut best_initialization_index = 0;
@@ -213,9 +213,9 @@ fn main() {
         round,
         200,
         250,
-        0.0001,
+        0.0005,
         5,
-        true,
+        false,
         false
     );
 }

@@ -5,14 +5,14 @@ use std::io::{BufReader, BufWriter, Read, Write};
 use itertools::Itertools;
 use std::error::Error;
 
-use crate::proto::{ClusteredDataCentroids, ClusteredDataLabels, DoubleList, FloatList, HandStrengthHistograms, EmdMatrix};
+use crate::proto::{ClusteredDataCentroids, ClusteredDataLabels, DoubleList, HandStrengthHistograms, EmdMatrix};
 
 static EXPORT_PATH: &str = "./data_out";
 
-pub fn save_data(labels: Vec<u32>, centroids: Vec<Vec<f64>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn save_data(labels: Vec<u16>, centroids: Vec<Vec<f64>>, round: usize, initialization_index: usize) -> Result<(), Box<dyn std::error::Error>> {
     let filepath_labels = format!("{}/labels_round_{}_initialization_{}.bin", EXPORT_PATH, round, initialization_index);
     let labels = ClusteredDataLabels {
-        data: labels
+        data: labels.into_iter().map(|value| value as u32).collect()
     };
     let mut labels_buf = Vec::new();
     labels.encode(&mut labels_buf).expect("Error encoding labels");
