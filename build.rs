@@ -6,6 +6,8 @@ fn main() {
             "src/proto/hand_strength_histograms.proto",
             "src/proto/opponent_cluster_hand_strength_histograms.proto",
             "src/proto/clustered_data_centroids.proto",
+            "src/proto/clustered_data_centroids_f64.proto",
+            "src/proto/potential_aware_emd_matrix.proto",
             ], &["src/"])
         .unwrap();
 }

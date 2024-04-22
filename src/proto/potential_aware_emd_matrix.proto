@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+// Represents a single row in the matrix
+message Row {
+  repeated double emd_values = 1; // A list of EMD values in this row
+}
+
+// Represents the whole matrix of EMD values
+message EMDMatrix {
+  repeated Row rows = 1; // Rows of EMD values
+}

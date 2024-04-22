@@ -29,3 +29,31 @@ pub struct FloatList {
     #[prost(float, repeated, tag = "1")]
     pub values: ::prost::alloc::vec::Vec<f32>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ClusteredDataCentroidsF64 {
+    #[prost(message, repeated, tag = "1")]
+    pub data: ::prost::alloc::vec::Vec<DoubleList>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DoubleList {
+    #[prost(double, repeated, tag = "1")]
+    pub values: ::prost::alloc::vec::Vec<f64>,
+}
+/// Represents a single row in the matrix
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Row {
+    /// A list of EMD values in this row
+    #[prost(double, repeated, tag = "1")]
+    pub emd_values: ::prost::alloc::vec::Vec<f64>,
+}
+/// Represents the whole matrix of EMD values
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct EmdMatrix {
+    /// Rows of EMD values
+    #[prost(message, repeated, tag = "1")]
+    pub rows: ::prost::alloc::vec::Vec<Row>,
+}
