@@ -31,7 +31,7 @@ pub fn kmeans_plusplus_euclidian(data: &[u8], histogram_size: usize, k: usize) -
                 let distance = euclidian_distance(&histogram_as_64, &last_centroid);
                 *min_dist = (*min_dist).min(distance);
             });
-    
+
         // Select next centroid based on updated min_distances
         let dist = WeightedIndex::new(&min_distances).unwrap();
         let next_centroid_idx = dist.sample(&mut rng) * histogram_size;
